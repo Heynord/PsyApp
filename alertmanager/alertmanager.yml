@@ -1,0 +1,40 @@
+global:
+  resolve_timeout: 30s
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 30s
+  receiver: 'telegram-notifications'
+  # Маршрутизация по важности
+  routes:
+    - match:
+        severity: critical
+      receiver: 'telegram-notifications'
+      repeat_interval: 30s  # Чаще повторяем критические алерты
+
+receivers:
+  - name: 'telegram-notifications'
+    telegram_configs:
+      - bot_token: '7700264301:AAFXSDdWgweDjqT78OjsjARR992bOfHsfKE'
+        chat_id: 716522027
+        parse_mode: 'HTML'
+        message: |
+          <b>🚨 {{ .Status | toUpper }}: {{ .Alerts.Firing | len }} alert(s)</b>
+          {{ range .Alerts }}
+          <b>📢 Тип:</b> {{ .Labels.alertname }}
+          <b>💻 Значение:</b> {{ .Annotations.description | reReplaceAll ".*current value: ([0-9.]+).*?" "$1" }}
+          <b>🕐 Начало:</b> {{ .StartsAt.Format "2006-01-02 15:04:05" }}
+          <b>⚠️ Проблема:</b> {{ .Annotations.summary }}
+          <b>✅ Рекомендация:</b> Проверьте затронутый экземпляр и при необходимости уменьшите нагрузку.
+          {{ end }}
+
+
+# Правила подавления дублирующих алертов
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']

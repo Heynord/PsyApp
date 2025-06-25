@@ -1,0 +1,34 @@
+---
+new_clients_daily:
+  query: "SELECT COUNT(*) AS value FROM clients.clients
+          WHERE created_at >= NOW() - INTERVAL '1 day';"
+  master: true
+  metrics:
+    - value:
+        usage: GAUGE
+        description: Количество новых клиентов за день
+
+appointments_daily:
+  query: "SELECT SUM(count) AS value FROM (
+          SELECT COUNT(*) AS count 
+          FROM appointments.appointments_shard1 
+          WHERE status = 'completed'
+          AND appointment_date >= NOW() - INTERVAL '1 day' 
+          UNION ALL 
+          SELECT COUNT(*) AS count FROM appointments.appointments_shard2
+          WHERE status = 'completed'
+          AND appointment_date >= NOW() - INTERVAL '1 day') AS counts;"
+  master: true
+  metrics:
+    - value:
+        usage: GAUGE
+        description: Количество проведенных встреч за день
+
+analytics_daily:
+  query: "SELECT SUM(amount) AS value FROM analytics.payment_logs
+          WHERE payment_date >= NOW() - INTERVAL '1 day';"
+  master: true
+  metrics:
+    - value:
+        usage: GAUGE
+        description: Прибыль за день от встреч

@@ -1,0 +1,27 @@
+groups:
+- name: groweasy_alerts
+  rules:
+  - alert: HighCPUUsage
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 0.2
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Высокая загрузка CPU на {{ $labels.instance }}"
+      description: "Загрузка CPU превышает 80% более 1 минуты (текущее значение: {{ $value }}%)"
+  - alert: LowDiskSpace
+    expr: (node_filesystem_free_bytes / node_filesystem_size_bytes) * 100 < 20
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Мало места на диске на {{ $labels.instance }}"
+      description: "Свободное место на диске менее 20% более 1 минуты (текущее значение: {{ $value }}%)"
+  - alert: PostgresHighConnections
+    expr: pg_stat_activity_count > 1
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Много активных подключений к PostgreSQL"
+      description: "Количество активных подключений к БД превышает 1 (текущее значение: {{ $value }})"
